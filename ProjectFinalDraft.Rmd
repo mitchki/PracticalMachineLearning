@@ -1,0 +1,82 @@
+---
+title: "ProjectFinalDraft"
+author: "Kimberley Mitchell"
+date: "Sunday, February 22, 2015"
+output: html_document
+---
+
+Load needed libraries and read in data:
+
+
+```{r}
+library(caret); library(e1071)
+library(kernlab)
+train <- read.csv("pml-training.csv",
+                  na.strings=c("","NA"),stringsAsFactors=FALSE)
+
+test <- read.csv("pml-testing.csv",
+                  na.strings=c("","NA"),stringsAsFactors=FALSE)
+```
+
+
+Lines below remove all the variables where the 20-row test dataset is completely NA.  Then they remove the Index and timestamp variables.
+
+```{r}
+sumna <- function(vector) {sum(is.na(vector))}
+train2 <- train[,sapply(test,sumna)!=20]
+test2 <- test[,sapply(test,sumna)!=20]
+train2 <- (train2[,c(-1,-3,-4,-5)])
+test2 <- (test2[,c(-1,-3,-4,-5)])
+```
+
+
+Set the character variables as factors
+```{r}
+train2$classe <- as.factor(train2$classe)
+train2$new_window <- as.factor(train2$new_window)
+train2$user_name <- as.factor(train2$user_name)
+train2$num_window <- as.factor(train2$num_window)
+
+##test$classe <- as.factor(test$classe)  ##Not in test data
+test$new_window <- as.factor(test$new_window)
+test$user_name <- as.factor(test$user_name)
+test$num_window <- as.factor(test$num_window)
+
+```
+
+Set up the training and test subsets of the train2 test set
+```{r}
+set.seed(323)
+inTrain <- createDataPartition(y=train2$classe,p=0.1,list=FALSE)
+training <- train2[inTrain,]
+testing <- train2[-inTrain,]
+tr <- training
+
+```
+Plot the category variables
+
+```{r}
+plot(tr$classe,tr$user_name,main = " Variable *classe* ", col=heat.colors(5),ylim=c(0,1),ylab="User Name")
+
+```
+
+
+
+
+Below line runs boosted trees model:
+(since there isn't enough time to actually run the model again before the project is due, the lines below will not be able to be processed as part of this document.)
+```
+gbmFit <- train(classe~.,data=tr,method="gbm",verbose=FALSE) 
+gbmtestpred <- predict(gbmFit,testing)
+gbmFit$finalModel
+```
+
+Predict out-of-sample error rate by testing error rate of prediction on the testing portion of the original dataset.
+(since there isn't enough time to actually run the model again before the project is due, the lines below will not be able to be processed as part of this document.)
+```
+correct <- sum(gbmtestpred == testing$classe)
+incorrect <- sum(gbmtestpred != testing$classe)
+outOfSampleErrorPrediction <- incorrect / (correct+incorrect)
+outOfSampleErrorPrediction
+```
+The actual calculated estimate of out of sample error rate was 0.068, which is a good fit with my results, where one of my 20 predicted values in our final test set was in error.
